@@ -1,7 +1,18 @@
-; -------------------------------
-; Copyleft by CoronaNIMO
-; kav#sjtuer.net
-; -------------------------------
+; --------------------------------------------------------------------------------
+; Copyleft by CoronaNIMO 版权没有 CoronaNIMO
+; e-mail : kav#sjtuer.net
+; --------------------------------------------------------------------------------
+; Usage:
+; Ctrl + D : Detect button position of Detonate, you MUST cast a miner skill first
+; D : Switch auto-detonating ON/OFF
+; Alt + D : Toggle force-detonating, useful when in Tane maps
+; ~ : Auto use potion 1-5
+; 使用说明：
+; Ctrl + D : 初始化引爆按钮位置，需要放一个地雷技能，让右下角有图标，一次即可
+; D ：切换自动智能检测引爆，不影响打字
+; Alt + D : 切换强制引爆，影响打字，但是在丹恩地图比较有用
+; ~ : 自动一键喝药
+; --------------------------------------------------------------------------------
 
 ; -------------------------------
 ; Make sure run as Admin
@@ -26,6 +37,7 @@ Global DetonateAbsY = 0
 Global Tick = 200
 Global DetonateColor = 0xFEFEFE
 Global Detonating = 0
+Global ForceDetonating = 0
 Global afterInit = 0
 CoordMode, ToolTip, Screen
 CoordMode, Pixel, Screen
@@ -84,9 +96,9 @@ IfWinExist, ahk_class POEWindowClass
 	DetonateAbsY2 := DetonateAbsY1 + Round(wHeight * 0.1)
 	PixelSearch ,Px , Py, %DetonateAbsX1%, %DetonateAbsY1%, %DetonateAbsX2%, %DetonateAbsY2%, %DetonateColor%, 1, Fast	
 	if ErrorLevel{
-		MsgBox , Cannot find the Detonate Button
+		ToolTip , Cannot find the Detonate Button
 	} else {
-		MsgBox , The Detonate Button is found X:%Px% Y:%Py%
+		ToolTip , The Detonate Button is found X:%Px% Y:%Py%
 		DetonateAbsX := Px
 		DetonateAbsY := Py
 	}
@@ -100,6 +112,25 @@ IfWinExist, ahk_class POEWindowClass
 	return
 }
 
+~!D::
+if (!afterInit) {
+	return
+}
+
+
+if (ForceDetonating) {
+	ForceDetonating := 0
+	GuiControl, 2:, T1, Detonate: OFF
+	Detonating := 0
+	SetTimer, DetonateLoop, off	
+} else {
+	ForceDetonating := 1
+	GuiControl, 2:, T1, DetonateForce 
+	Detonating := 1
+	SetTimer, DetonateLoop, %Tick%
+}
+return
+
 
 
 ~D::
@@ -108,6 +139,9 @@ if (!afterInit) {
 	return
 }
 
+if (ForceDetonating) {
+	return
+}
 
 if (Detonating) {
 	GuiControl, 2:, T1, Detonate: OFF
@@ -132,11 +166,12 @@ IfWinActive, ahk_class POEWindowClass
 		return
 	}else{
 		PixelSearch, Px, Py, %DetonateAbsX%, %DetonateAbsY%, %DetonateAbsX%, %DetonateAbsY%, %DetonateColor%, 1, Fast
-		if ErrorLevel{
+		if ErrorLevel and !ForceDetonating {			
 			return
 		}
-		else
+		else {
 			send {d}
+		}
 	}
 }
 return
